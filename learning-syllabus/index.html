@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>System Design — Path to Mastery</title>
+<style>
+  :root {
+    --bg: #0f1419;
+    --surface: #1a2029;
+    --surface-2: #222b36;
+    --border: #2c3744;
+    --text: #e6edf3;
+    --muted: #9aa7b4;
+    --accent: #4cc9f0;
+    --accent-2: #7b9cff;
+    --done: #3fb950;
+    --done-bg: rgba(63, 185, 80, 0.12);
+    --ready: #d29922;
+    --pending: #5a6675;
+    --radius: 12px;
+    --shadow: 0 4px 18px rgba(0,0,0,0.35);
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.55;
+  }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* ---------- Header ---------- */
+  header {
+    background: radial-gradient(1200px 400px at 20% -50%, rgba(123,156,255,0.25), transparent),
+                linear-gradient(135deg, #161d27, #0f1419);
+    border-bottom: 1px solid var(--border);
+    padding: 48px 24px 36px;
+  }
+  .wrap { max-width: 960px; margin: 0 auto; }
+  h1 {
+    margin: 0 0 8px;
+    font-size: 2.1rem;
+    letter-spacing: -0.5px;
+    background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .subtitle { color: var(--muted); font-size: 1.05rem; margin: 0 0 22px; }
+  .meta-row { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 24px; }
+  .pill {
+    font-size: 0.78rem; padding: 5px 11px; border-radius: 999px;
+    background: var(--surface-2); border: 1px solid var(--border); color: var(--muted);
+  }
+  .pill strong { color: var(--text); font-weight: 600; }
+
+  /* ---------- Progress ---------- */
+  .progress-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 18px 20px; box-shadow: var(--shadow);
+  }
+  .progress-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }
+  .progress-head .label { font-weight: 600; }
+  .progress-head .count { color: var(--muted); font-size: 0.9rem; }
+  .bar { height: 10px; background: var(--surface-2); border-radius: 999px; overflow: hidden; }
+  .bar > span { display: block; height: 100%; width: 0; border-radius: 999px;
+    background: linear-gradient(90deg, var(--accent), var(--done)); transition: width .4s ease; }
+  .reset-btn {
+    margin-top: 12px; font-size: 0.78rem; color: var(--muted); background: none;
+    border: 1px solid var(--border); border-radius: 8px; padding: 4px 10px; cursor: pointer;
+  }
+  .reset-btn:hover { color: var(--text); border-color: var(--muted); }
+
+  /* ---------- How to use ---------- */
+  .howto {
+    max-width: 960px; margin: 28px auto 0; padding: 0 24px;
+  }
+  .howto details {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 4px 18px;
+  }
+  .howto summary { cursor: pointer; font-weight: 600; padding: 12px 0; }
+  .howto ul { margin: 4px 0 14px; padding-left: 20px; color: var(--muted); }
+  .howto code { background: var(--surface-2); padding: 1px 6px; border-radius: 5px; font-size: 0.85em; }
+
+  /* ---------- Modules ---------- */
+  main { max-width: 960px; margin: 0 auto; padding: 16px 24px 80px; }
+  .module { margin-top: 40px; }
+  .module-head {
+    display: flex; align-items: center; gap: 14px; margin-bottom: 6px;
+  }
+  .module-num {
+    flex: none; width: 40px; height: 40px; border-radius: 10px;
+    display: grid; place-items: center; font-weight: 700; font-size: 1.05rem;
+    background: linear-gradient(135deg, var(--accent-2), var(--accent)); color: #0f1419;
+  }
+  .module-head h2 { margin: 0; font-size: 1.35rem; }
+  .module-goal { color: var(--muted); margin: 0 0 18px 54px; font-size: 0.95rem; }
+
+  /* ---------- Lesson cards ---------- */
+  .lesson {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); margin-bottom: 12px; overflow: hidden;
+    transition: border-color .2s ease;
+  }
+  .lesson.done { border-color: rgba(63,185,80,0.4); background: linear-gradient(0deg, var(--done-bg), var(--surface)); }
+  .lesson-main { display: flex; align-items: flex-start; gap: 14px; padding: 16px 18px; }
+  .checkbox {
+    flex: none; appearance: none; width: 22px; height: 22px; margin-top: 2px;
+    border: 2px solid var(--border); border-radius: 6px; cursor: pointer; position: relative;
+    background: var(--surface-2); transition: all .15s ease;
+  }
+  .checkbox:hover { border-color: var(--done); }
+  .checkbox:checked { background: var(--done); border-color: var(--done); }
+  .checkbox:checked::after {
+    content: ""; position: absolute; left: 6px; top: 2px; width: 5px; height: 10px;
+    border: solid #0f1419; border-width: 0 2px 2px 0; transform: rotate(45deg);
+  }
+  .lesson-body { flex: 1; min-width: 0; }
+  .lesson-title-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+  .lesson-code { color: var(--muted); font-variant-numeric: tabular-nums; font-size: 0.85rem; font-weight: 600; }
+  .lesson-title { font-weight: 600; font-size: 1.02rem; }
+  .lesson.done .lesson-title { color: var(--muted); }
+  .badge {
+    font-size: 0.68rem; text-transform: uppercase; letter-spacing: .04em; font-weight: 700;
+    padding: 3px 8px; border-radius: 999px; border: 1px solid;
+  }
+  .badge.pending { color: var(--pending); border-color: var(--pending); }
+  .badge.ready   { color: var(--ready); border-color: var(--ready); }
+  .badge.done    { color: var(--done); border-color: var(--done); }
+  .taught-note { font-size: 0.74rem; color: var(--done); white-space: nowrap; }
+  .time { margin-left: auto; color: var(--muted); font-size: 0.8rem; white-space: nowrap; }
+  .objective { color: var(--muted); margin: 8px 0 10px; font-size: 0.92rem; }
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+  .tag { font-size: 0.72rem; background: var(--surface-2); color: var(--muted);
+    border: 1px solid var(--border); border-radius: 6px; padding: 2px 8px; }
+  .links { display: flex; flex-wrap: wrap; gap: 16px; font-size: 0.85rem; }
+  .links a.disabled { color: var(--pending); cursor: not-allowed; text-decoration: none; }
+
+  footer { max-width: 960px; margin: 0 auto; padding: 30px 24px 60px; color: var(--muted); font-size: 0.85rem; border-top: 1px solid var(--border); }
+  @media (max-width: 560px) {
+    h1 { font-size: 1.6rem; }
+    .module-goal { margin-left: 0; }
+    .time { margin-left: 0; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>System Design — Path to Mastery</h1>
+    <p class="subtitle">A structured, build-up-from-foundations curriculum derived from <a href="https://github.com/donnemartin/system-design-primer" target="_blank" rel="noopener">The System Design Primer</a>.</p>
+    <div class="meta-row">
+      <span class="pill">Goal: <strong>Deep mastery</strong></span>
+      <span class="pill">Level: <strong>Beginner → Intermediate</strong></span>
+      <span class="pill">Lessons: <strong id="total-pill">0</strong></span>
+      <span class="pill">Est. total: <strong id="time-pill">~0h</strong></span>
+    </div>
+    <div class="progress-card">
+      <div class="progress-head">
+        <span class="label">Your progress</span>
+        <span class="count"><span id="done-count">0</span> / <span id="total-count">0</span> lessons</span>
+      </div>
+      <div class="bar"><span id="bar-fill"></span></div>
+      <button class="reset-btn" id="reset-btn">Reset progress</button>
+    </div>
+  </div>
+</header>
+
+<div class="howto">
+  <details>
+    <summary>How to use this syllabus</summary>
+    <ul>
+      <li>Work <strong>top to bottom</strong> — each module builds on the previous one. Trade-offs (Module 1) underpin every later decision.</li>
+      <li>Tick a lesson's checkbox when you finish it. Progress is saved in <strong>this browser</strong> (no account, no server) and persists across visits.</li>
+      <li>Each lesson links to its <strong>source section</strong> in the primer. Lesson pages are authored one at a time — a <span class="badge pending" style="font-size:.62rem">not yet created</span> badge means its dedicated page isn't written yet, but you can still study from the source link.</li>
+      <li>As lesson pages are created they'll live in <code>lessons/</code> and the badge flips to <span class="badge ready" style="font-size:.62rem">ready</span>.</li>
+    </ul>
+  </details>
+</div>
+
+<main id="modules"></main>
+
+<footer>
+  <p>Generated from the table of contents of <a href="https://github.com/donnemartin/system-design-primer" target="_blank" rel="noopener">donnemartin/system-design-primer</a> (CC BY 4.0). This syllabus reorganizes that material into a progressive learning path for self-study.</p>
+</footer>
+
+<script>
+// ---------- Curriculum data (derived from the primer's table of contents) ----------
+const REPO = "https://github.com/donnemartin/system-design-primer";
+const src = (anchor) => REPO + anchor;
+
+const MODULES = [
+  {
+    num: "0", title: "Foundations & How to Think",
+    goal: "Build the mental model and vocabulary before any machinery. What scalability means, the one rule that governs every decision, and how to size a system on the back of an envelope.",
+    lessons: [
+      { id: "0-1", title: "What is system design & why scalability matters",
+        objective: "Understand vertical vs horizontal scaling, and meet the recurring levers — clones, caching, load balancing, replication, partitioning — at a high level.",
+        tags: ["scalability", "vertical vs horizontal", "the big picture"], time: 45,
+        source: src("#system-design-topics-start-here") },
+      { id: "0-2", title: "\"Everything is a trade-off\" & the 4-step approach",
+        objective: "Internalize the design framework: (1) requirements & constraints, (2) high-level design, (3) core components, (4) scale it — and why no choice is free.",
+        tags: ["trade-offs", "requirements", "design method"], time: 40,
+        source: src("#how-to-approach-a-system-design-interview-question") },
+      { id: "0-3", title: "Back-of-the-envelope estimation",
+        objective: "Reason about capacity, QPS, and storage using powers of two and the latency numbers every engineer should know.",
+        tags: ["estimation", "powers of two", "latency numbers"], time: 30,
+        source: src("#appendix") },
+    ]
+  },
+  {
+    num: "1", title: "Core Trade-offs",
+    goal: "The conceptual spine. These tensions — speed vs scale, latency vs throughput, consistency vs availability — reappear in every system you'll ever design.",
+    lessons: [
+      { id: "1-1", title: "Performance vs scalability",
+        objective: "Tell a performance problem (slow for one user) apart from a scalability problem (slow under load), and why the fix differs.",
+        tags: ["performance", "scalability"], time: 20, source: src("#performance-vs-scalability") },
+      { id: "1-2", title: "Latency vs throughput",
+        objective: "Define both precisely and learn the guiding aim: maximal throughput at acceptable latency.",
+        tags: ["latency", "throughput"], time: 20, source: src("#latency-vs-throughput") },
+      { id: "1-3", title: "Availability vs consistency — the CAP theorem",
+        objective: "Understand why partition tolerance is non-negotiable, and the real choice between CP and AP systems.",
+        tags: ["CAP", "CP", "AP", "partitions"], time: 30, source: src("#cap-theorem") },
+      { id: "1-4", title: "Consistency patterns",
+        objective: "Compare weak, eventual, and strong consistency and where each fits (VoIP, DNS, RDBMS).",
+        tags: ["weak", "eventual", "strong"], time: 25, source: src("#consistency-patterns") },
+      { id: "1-5", title: "Availability patterns",
+        objective: "Master fail-over (active-passive / active-active), replication, and quantifying uptime in 9s — including availability in sequence vs parallel.",
+        tags: ["fail-over", "replication", "nines"], time: 35, source: src("#availability-patterns") },
+    ]
+  },
+  {
+    num: "2", title: "The Edge: Networking & Traffic",
+    goal: "How a request actually reaches your servers and gets distributed. The components that sit in front of your application.",
+    lessons: [
+      { id: "2-1", title: "Domain Name System (DNS)",
+        objective: "Trace a name→IP lookup, understand record types (A, CNAME, NS, MX), TTL/caching, and routing policies (latency, geo, weighted round robin).",
+        tags: ["DNS", "TTL", "records"], time: 30, source: src("#domain-name-system") },
+      { id: "2-2", title: "Content Delivery Networks (CDN)",
+        objective: "Why CDNs speed things up, and the push vs pull trade-off in storage and freshness.",
+        tags: ["CDN", "push", "pull", "edge"], time: 30, source: src("#content-delivery-network") },
+      { id: "2-3", title: "Load balancers",
+        objective: "Distribute traffic with active-passive/active-active setups, Layer 4 vs Layer 7 balancing, and enable horizontal scaling of stateless servers.",
+        tags: ["load balancing", "L4 vs L7", "horizontal scaling"], time: 45, source: src("#load-balancer") },
+      { id: "2-4", title: "Reverse proxy (web server)",
+        objective: "See what a reverse proxy adds (security, SSL termination, compression, caching) and how it differs from a load balancer.",
+        tags: ["reverse proxy", "SSL termination"], time: 25, source: src("#reverse-proxy-web-server") },
+    ]
+  },
+  {
+    num: "3", title: "Application Layer",
+    goal: "Separating concerns inside the system so each part can scale, deploy, and evolve independently.",
+    lessons: [
+      { id: "3-1", title: "Web layer vs application layer",
+        objective: "Understand why splitting web and platform layers lets you scale and configure them independently (single-responsibility at the system level).",
+        tags: ["platform layer", "separation of concerns"], time: 25, source: src("#application-layer") },
+      { id: "3-2", title: "Microservices",
+        objective: "Define independently deployable services, their benefits, and the operational complexity they add.",
+        tags: ["microservices", "coupling"], time: 30, source: src("#microservices") },
+      { id: "3-3", title: "Service discovery",
+        objective: "How services find each other (Consul, Etcd, Zookeeper), health checks, and shared key-value config.",
+        tags: ["service discovery", "health checks"], time: 20, source: src("#service-discovery") },
+    ]
+  },
+  {
+    num: "4", title: "Databases",
+    goal: "The heart of most designs. From ACID guarantees to the full toolbox of techniques for scaling relational stores, plus when to reach for NoSQL.",
+    lessons: [
+      { id: "4-1", title: "RDBMS & ACID",
+        objective: "Understand relational tables and the ACID properties (atomicity, consistency, isolation, durability) that transactions provide.",
+        tags: ["SQL", "ACID", "transactions"], time: 30, source: src("#relational-database-management-system-rdbms") },
+      { id: "4-2", title: "Replication: master-slave & master-master",
+        objective: "Compare the two replication topologies, their failure behavior, and the replication-lag trade-offs common to both.",
+        tags: ["replication", "master-slave", "master-master"], time: 40, source: src("#master-slave-replication") },
+      { id: "4-3", title: "Federation & sharding",
+        objective: "Split databases by function (federation) or by data subset (sharding); understand rebalancing and consistent hashing.",
+        tags: ["federation", "sharding", "consistent hashing"], time: 40, source: src("#federation") },
+      { id: "4-4", title: "Denormalization & SQL tuning",
+        objective: "Trade write cost for read speed via redundant data and materialized views; benchmark and profile to find bottlenecks.",
+        tags: ["denormalization", "tuning", "indexes"], time: 30, source: src("#denormalization") },
+      { id: "4-5", title: "NoSQL stores",
+        objective: "Compare key-value, document, wide-column, and graph databases — their data models and ideal use cases.",
+        tags: ["key-value", "document", "wide-column", "graph"], time: 45, source: src("#nosql") },
+      { id: "4-6", title: "SQL or NoSQL?",
+        objective: "Build a decision framework: when relational guarantees win, and when a NoSQL model fits the access pattern better.",
+        tags: ["decision-making", "BASE vs ACID"], time: 25, source: src("#sql-or-nosql") },
+    ]
+  },
+  {
+    num: "5", title: "Caching",
+    goal: "The single most effective scaling lever for read-heavy systems — and the subtle correctness problems it introduces.",
+    lessons: [
+      { id: "5-1", title: "Why & where to cache",
+        objective: "Survey caching layers: client, CDN, web server, database, and application caches.",
+        tags: ["cache layers", "read-heavy"], time: 35, source: src("#cache") },
+      { id: "5-2", title: "Query-level vs object-level caching",
+        objective: "Understand the two granularities of caching and why object-level is usually more robust to invalidation.",
+        tags: ["query cache", "object cache"], time: 20, source: src("#caching-at-the-database-query-level") },
+      { id: "5-3", title: "Cache update strategies",
+        objective: "Compare cache-aside, write-through, write-behind, and refresh-ahead — and their consistency/latency trade-offs.",
+        tags: ["cache-aside", "write-through", "write-behind", "refresh-ahead"], time: 35, source: src("#when-to-update-the-cache") },
+    ]
+  },
+  {
+    num: "6", title: "Asynchronism",
+    goal: "Decouple expensive work from the request path so the system stays responsive under load.",
+    lessons: [
+      { id: "6-1", title: "Message & task queues",
+        objective: "Use queues to defer work, smooth spikes, and decouple producers from consumers.",
+        tags: ["message queue", "task queue", "workers"], time: 30, source: src("#asynchronism") },
+      { id: "6-2", title: "Back pressure",
+        objective: "Handle overload gracefully by bounding queues and signaling clients to slow down rather than collapsing.",
+        tags: ["back pressure", "overload"], time: 15, source: src("#back-pressure") },
+    ]
+  },
+  {
+    num: "7", title: "Communication",
+    goal: "How the pieces of a distributed system talk to each other and to the outside world.",
+    lessons: [
+      { id: "7-1", title: "TCP vs UDP",
+        objective: "Compare reliable, ordered, connection-oriented TCP against fast, connectionless UDP, and when each is right.",
+        tags: ["TCP", "UDP", "transport layer"], time: 30, source: src("#transmission-control-protocol-tcp") },
+      { id: "7-2", title: "Remote Procedure Call (RPC)",
+        objective: "Understand the RPC model, where it shines for internal communication, and its coupling drawbacks.",
+        tags: ["RPC", "internal APIs"], time: 25, source: src("#remote-procedure-call-rpc") },
+      { id: "7-3", title: "REST (and REST vs RPC)",
+        objective: "Master REST constraints and resource modeling, then weigh REST against RPC for public APIs.",
+        tags: ["REST", "HTTP", "API design"], time: 30, source: src("#representational-state-transfer-rest") },
+    ]
+  },
+  {
+    num: "8", title: "Security",
+    goal: "Foundational web-security awareness every system designer is expected to have.",
+    lessons: [
+      { id: "8-1", title: "Web security fundamentals",
+        objective: "Cover encryption in transit, input sanitization, least privilege, and principle-of-defense basics.",
+        tags: ["security", "encryption", "least privilege"], time: 30, source: src("#security") },
+    ]
+  },
+  {
+    num: "9", title: "Capstone — Putting It Together",
+    goal: "Apply everything to a real design end-to-end, then study how production systems at scale actually look.",
+    lessons: [
+      { id: "9-1", title: "Capstone: design Pastebin / Bit.ly with the 4-step method",
+        objective: "Run the full framework on a real problem — requirements, high-level design, core components, scaling — combining caching, sharding, and load balancing.",
+        tags: ["capstone", "applied", "url shortener"], time: 60,
+        source: REPO + "/blob/master/solutions/system_design/pastebin/README.md" },
+      { id: "9-2", title: "Tour of real-world & company architectures",
+        objective: "Read how real systems are built and connect each design choice back to the trade-offs you learned in Module 1.",
+        tags: ["real-world", "case studies"], time: 40, source: src("#real-world-architectures") },
+    ]
+  },
+];
+
+// Set to true once a lesson's dedicated page in lessons/ has been authored.
+const LESSON_CREATED = {
+  "0-1": true,
+};
+
+// Stamp the date (YYYY-MM-DD) a lesson was taught. Shows a "taught" mark in the index,
+// shared in the file itself (unlike your personal checkbox, which is per-browser).
+const TAUGHT_ON = {
+  "0-1": "2026-05-29",
+};
+
+// ---------- Rendering ----------
+const STORAGE_KEY = "sdp-syllabus-progress-v1";
+function loadProgress() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; }
+  catch (e) { return {}; }
+}
+function saveProgress(p) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(p)); } catch (e) {}
+}
+
+let progress = loadProgress();
+const allLessons = MODULES.flatMap(m => m.lessons);
+const totalTime = allLessons.reduce((s, l) => s + l.time, 0);
+
+function lessonFile(id) { return "lessons/lesson-" + id + ".html"; }
+
+function statusBadge(l) {
+  if (progress[l.id]) return '<span class="badge done">completed</span>';
+  if (LESSON_CREATED[l.id]) return '<span class="badge ready">ready</span>';
+  return '<span class="badge pending">not yet created</span>';
+}
+
+function taughtNote(l) {
+  return TAUGHT_ON[l.id] ? `<span class="taught-note">✓ taught ${TAUGHT_ON[l.id]}</span>` : "";
+}
+
+function lessonLinks(l) {
+  const created = LESSON_CREATED[l.id];
+  const lessonLink = created
+    ? `<a href="${lessonFile(l.id)}">▶ Open lesson</a>`
+    : `<a class="disabled" title="Lesson page not authored yet — study from the source for now">▶ Lesson (pending)</a>`;
+  return `<div class="links">${lessonLink}<a href="${l.source}" target="_blank" rel="noopener">↗ Source in primer</a></div>`;
+}
+
+function fmtTime(min) {
+  const h = Math.floor(min / 60), m = min % 60;
+  if (h && m) return `${h}h ${m}m`;
+  if (h) return `${h}h`;
+  return `${m}m`;
+}
+
+function render() {
+  const container = document.getElementById("modules");
+  container.innerHTML = MODULES.map(mod => `
+    <section class="module">
+      <div class="module-head">
+        <div class="module-num">${mod.num}</div>
+        <h2>${mod.title}</h2>
+      </div>
+      <p class="module-goal">${mod.goal}</p>
+      ${mod.lessons.map(l => `
+        <div class="lesson ${progress[l.id] ? "done" : ""}" id="lesson-${l.id}">
+          <div class="lesson-main">
+            <input type="checkbox" class="checkbox" data-id="${l.id}" ${progress[l.id] ? "checked" : ""} aria-label="Mark ${l.title} complete">
+            <div class="lesson-body">
+              <div class="lesson-title-row">
+                <span class="lesson-code">${l.id.replace("-", ".")}</span>
+                <span class="lesson-title">${l.title}</span>
+                ${statusBadge(l)}
+                ${taughtNote(l)}
+                <span class="time">⏱ ${fmtTime(l.time)}</span>
+              </div>
+              <p class="objective">${l.objective}</p>
+              <div class="tags">${l.tags.map(t => `<span class="tag">${t}</span>`).join("")}</div>
+              ${lessonLinks(l)}
+            </div>
+          </div>
+        </div>
+      `).join("")}
+    </section>
+  `).join("");
+
+  container.querySelectorAll(".checkbox").forEach(cb => {
+    cb.addEventListener("change", e => {
+      const id = e.target.dataset.id;
+      if (e.target.checked) progress[id] = true; else delete progress[id];
+      saveProgress(progress);
+      document.getElementById("lesson-" + id).classList.toggle("done", e.target.checked);
+      // refresh just the badge for this lesson
+      updateStats();
+      render();
+    });
+  });
+
+  updateStats();
+}
+
+function updateStats() {
+  const done = allLessons.filter(l => progress[l.id]).length;
+  const total = allLessons.length;
+  document.getElementById("done-count").textContent = done;
+  document.getElementById("total-count").textContent = total;
+  document.getElementById("total-pill").textContent = total;
+  document.getElementById("time-pill").textContent = "~" + Math.round(totalTime / 60) + "h";
+  document.getElementById("bar-fill").style.width = (total ? (done / total * 100) : 0) + "%";
+}
+
+document.getElementById("reset-btn").addEventListener("click", () => {
+  if (confirm("Reset all lesson progress in this browser?")) {
+    progress = {};
+    saveProgress(progress);
+    render();
+  }
+});
+
+render();
+</script>
+</body>
+</html>
